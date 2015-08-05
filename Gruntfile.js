@@ -53,6 +53,8 @@ module.exports = function (grunt) {
       '<%= plugins %>/table_vis/table_vis.less',
       '<%= plugins %>/metric_vis/metric_vis.less',
       '<%= plugins %>/markdown_vis/markdown_vis.less'
+      //openshift
+      ,'<%= plugins %>/openshift-kibana/styles/main.less'
     ]
   };
 
