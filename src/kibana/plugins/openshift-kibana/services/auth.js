@@ -1,25 +1,23 @@
 define(function (require) {
   var plugin = require('modules').get('plugins/openshift-kibana');
-
+  var qs = require('utils/query_string');
+  
   plugin.provider('AuthService', function () {
-    this.$get = function ($location) {
-      var AUTH_TYPE = 0;
-      var TOKEN_INDEX = 1;
-      var _token = '';
+    this.$get = function ($location, UserStore) {
       return {
-        stashToken: function (config) {
-          var value = $location.search().openshift_auth_token || false;
+        stashToken: function () {
+          var hash = qs.decode($location.hash());
+          var value = hash.openshift_auth_token || false;
           if (value !== false) {
-            _token = value;
-          } else if (config.headers.Authorization) {
-            var auth = config.headers.Authorization.split(' ');
-            if (auth.length >= 2 && auth[AUTH_TYPE] === 'Bearer') {
-              _token = auth[TOKEN_INDEX];
-            }
+            UserStore.setToken(value);
+            delete hash['openshift_auth_token'];
+            delete hash['openshift_back_url'];
+            $location.hash(qs.encode(hash));
+            $location.replace();
           }
         },
         setAuthorization: function (config) {
-          config.headers.Authorization = 'Bearer ' + _token;
+          config.headers.Authorization = 'Bearer ' + UserStore.getToken();
         },
         hasAuthorization: function (config) {
           return config.headers.Authorization || false;
@@ -31,7 +29,7 @@ define(function (require) {
   plugin.factory('AuthInterceptor', ['AuthService', function (AuthService) {
     return {
       request: function (config) {
-        AuthService.stashToken(config);
+        AuthService.stashToken();
         if (!AuthService.hasAuthorization(config)) {
           AuthService.setAuthorization(config);
         }
