@@ -1,19 +1,14 @@
 define(function (require) {
   var plugin = require('modules').get('plugins/openshift-kibana');
   var qs = require('utils/query_string');
-  
   plugin.provider('AuthService', function () {
     this.$get = function ($location, UserStore) {
       return {
         stashToken: function () {
-          var hash = qs.decode($location.hash());
-          var value = hash.openshift_auth_token || false;
-          if (value !== false) {
-            UserStore.setToken(value);
-            delete hash['openshift_auth_token'];
-            delete hash['openshift_back_url'];
-            $location.hash(qs.encode(hash));
-            $location.replace();
+          // TODO just so other code kinda behaves the same
+          var user = UserStore.getUser();
+          if ('auth_token' in user) {
+            UserStore.setToken(user.auth_token);
           }
         },
         setAuthorization: function (config) {
@@ -25,7 +20,6 @@ define(function (require) {
       };
     };
   });
-
   plugin.factory('AuthInterceptor', ['AuthService', function (AuthService) {
     return {
       request: function (config) {
